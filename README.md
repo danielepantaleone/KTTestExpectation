@@ -1,18 +1,51 @@
 # KTTestExpectation
 
-[![API](https://img.shields.io/badge/API-23%2B-green.svg?style=flat-square)](https://android-arsenal.com/api?level=23)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/danielepantaleone/KTTestExpectation?style=flat-square)
-![GitHub](https://img.shields.io/github/license/danielepantaleone/KTTestExpectation?style=flat-square)
-[![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/danielepantaleone/KTTestExpectation/android-tests.yml?style=flat-square&logo=github)](https://github.com/danielepantaleone/KTTestExpectation/actions/workflows/android-tests.yml)
+[![API](https://img.shields.io/badge/API-23%2B-green.svg)](https://android-arsenal.com/api?level=23)
+![GitHub](https://img.shields.io/github/license/danielepantaleone/KTTestExpectation)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/danielepantaleone/KTTestExpectation)
+[![Android Tests](https://github.com/danielepantaleone/KTTestExpectation/actions/workflows/android-tests.yml/badge.svg)](https://github.com/danielepantaleone/KTTestExpectation/actions/workflows/android-tests.yml)
 
 The purpose of this library is to provide simple Kotlin implementation of Swift's expectation to ease testing of asynchronous code that doesn't make use of Kotlin coroutines.
 
 ## Table of contents
 
+* [Installation](#installation)
 * [Basic usage](#basic-usage)
 * [Advanced usage](#advanced-usage)
 * [Contributing](#contributing)
 * [License](#license)
+
+## Installation
+
+Add the repository to your `build.gradle` (Gradle Groovy) or `build.gradle.kts` (Kotlin DSL):
+
+```
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/danielepantaleone/KTTestExpectation")
+        credentials {
+            username = "<YOUR-GITHUB-USERNAME>"
+            password = "<YOUR-GITHUB-ACCESS-TOKEN>"
+        }
+   }
+}
+```
+
+Add the dependency to your `build.gradle` (Gradle Groovy):
+
+```
+dependencies {
+    implementation 'com.danielepantaleone.libs:kttestexpectation:1.0.0'
+}
+```
+
+or `build.gradle.kts` (Kotlin DSL):
+
+```
+dependencies {
+    implementation("com.danielepantaleone.libs:kttestexpectation:1.0.0")
+}
+```
 
 ## Basic usage
 
