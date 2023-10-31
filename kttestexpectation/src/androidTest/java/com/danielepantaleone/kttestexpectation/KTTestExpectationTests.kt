@@ -88,7 +88,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithFulfillment() {
+    fun testAwaitMultiExpectationsWithFulfillment() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         runLater(200, expectation1::fulfill)
@@ -103,7 +103,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithFulfillmentAndDifferentCount() {
+    fun testAwaitMultiExpectationsWithFulfillmentAndDifferentCount() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.expectedFulfillmentCount = 2
@@ -120,7 +120,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithSingleFulfillmentAfterTimeout() {
+    fun testAwaitMultiExpectationsWithSingleFulfillmentAfterTimeout() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         runLater(200, expectation1::fulfill)
@@ -142,7 +142,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithSingleFulfillmentAfterTimeoutAndDifferentCount() {
+    fun testAwaitMultiExpectationsWithSingleFulfillmentAfterTimeoutAndDifferentCount() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.expectedFulfillmentCount = 2
@@ -165,7 +165,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithoutFulfillment() {
+    fun testAwaitMultiExpectationsWithoutFulfillment() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         try {
@@ -185,7 +185,7 @@ class KTTestExpectationTests {
     }
 
     @Test
-    fun testAwaitMultiExpectationWithAlreadyFulfilledExpectation() {
+    fun testAwaitMultiExpectationsWithAlreadyFulfilledExpectation() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.fulfill()
