@@ -39,7 +39,7 @@ dependencies {
 
 publishing {
     publications {
-        bar(MavenPublication) {
+        release(MavenPublication) {
             groupId 'com.danielepantaleone.libs'
             artifactId 'kttestexpectation'
             version "${android.defaultConfig.versionName}"
