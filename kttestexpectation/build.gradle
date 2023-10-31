@@ -75,8 +75,8 @@ publishing {
             name = "GitHubPackages"
             url = uri("https://maven.pkg.github.com/danielepantaleone/KTTestExpectation")
             credentials {
-                username = System.getenv("GITHUB_USR")
-                password = System.getenv("GITHUB_KEY")
+                username = System.getenv("GP_USR")
+                password = System.getenv("GP_KEY")
             }
         }
     }
