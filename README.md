@@ -19,7 +19,7 @@ The purpose of this library is to provide simple Kotlin implementation of Swift'
 
 Add the repository to your `build.gradle` (Gradle Groovy) or `build.gradle.kts` (Kotlin DSL):
 
-```
+```gradle
 repositories {
     maven {
         url = uri("https://maven.pkg.github.com/danielepantaleone/KTTestExpectation")
@@ -33,7 +33,7 @@ repositories {
 
 Add the dependency to your `build.gradle` (Gradle Groovy):
 
-```
+```gradle
 dependencies {
     implementation 'com.danielepantaleone.libs:kttestexpectation:1.0.0'
 }
@@ -41,7 +41,7 @@ dependencies {
 
 or `build.gradle.kts` (Kotlin DSL):
 
-```
+```gradle
 dependencies {
     implementation("com.danielepantaleone.libs:kttestexpectation:1.0.0")
 }
