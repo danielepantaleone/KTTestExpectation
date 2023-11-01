@@ -1,4 +1,4 @@
-package com.danielepantaleone.kttestexpectation
+package io.github.danielepantaleone.kttestexpectation
 
 import android.os.Handler
 import android.os.Looper

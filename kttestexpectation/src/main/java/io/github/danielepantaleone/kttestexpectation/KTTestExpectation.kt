@@ -1,4 +1,4 @@
-package com.danielepantaleone.kttestexpectation
+package io.github.danielepantaleone.kttestexpectation
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Condition
