@@ -29,7 +29,7 @@ Add the dependency to your `build.gradle` (Gradle Groovy):
 
 ```gradle
 dependencies {
-    androidTestImplementation 'io.github.danielepantaleone.:kttestexpectation:1.0.0'
+    androidTestImplementation 'io.github.danielepantaleone:kttestexpectation:1.0.0'
 }
 ```
 
