@@ -1,9 +1,8 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+    id 'maven-publish'
 }
-
-apply plugin: 'maven-publish'
 
 android {
     namespace 'io.github.danielepantaleone.kttestexpectation'
@@ -27,6 +26,12 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 dependencies {
@@ -40,43 +45,44 @@ dependencies {
 publishing {
     publications {
         release(MavenPublication) {
-            groupId 'io.github.danielepantaleone'
-            artifactId 'kttestexpectation'
-            version "${android.defaultConfig.versionName}"
-            artifact("${buildDir}/outputs/aar/${archivesBaseName}-release.aar")
-            pom.withXml {
-                def dependenciesNode = asNode().appendNode('dependencies')
-                ext.addDependency = { Dependency dep, String scope ->
-                    if (dep.group == null || dep.version == null || dep.name == null || dep.name == "unspecified")
-                        return
-                    final dependencyNode = dependenciesNode.appendNode('dependency')
-                    dependencyNode.appendNode('groupId', dep.group)
-                    dependencyNode.appendNode('artifactId', dep.name)
-                    dependencyNode.appendNode('version', dep.version)
-                    dependencyNode.appendNode('scope', scope)
-                    if (!dep.transitive) {
-                        final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
-                        exclusionNode.appendNode('groupId', '*')
-                        exclusionNode.appendNode('artifactId', '*')
-                    } else if (!dep.properties.excludeRules.empty) {
-                        final exclusionNode = dependencyNode.appendNode('exclusions').appendNode('exclusion')
-                        dep.properties.excludeRules.each { ExcludeRule rule ->
-                            exclusionNode.appendNode('groupId', rule.group ?: '*')
-                            exclusionNode.appendNode('artifactId', rule.module ?: '*')
-                        }
+            groupId = "io.github.danielepantaleone"
+            artifactId = "kttestexpectation"
+            version = "${android.defaultConfig.versionName}"
+            afterEvaluate {
+                from components.release
+            }
+            pom {
+                name = "KTTestExpectation"
+                description = "A simple Kotlin implementation of Swift's expectation"
+                url = "https://github.com/danielepantaleone/KTTestExpectation"
+                licenses {
+                    license {
+                        name = "MIT"
+                        url = "https://github.com/danielepantaleone/KTTestExpectation/blob/master/LICENSE"
                     }
                 }
-                configurations.implementation.getDependencies().each { dep -> addDependency(dep, "runtime") }
+                developers {
+                    developer {
+                        id = "danielepantaleone"
+                        name = "Daniele Pantaleone"
+                        email = "danielepantaleone@me.com"
+                    }
+                }
+                scm {
+                    connection = "https://github.com/danielepantaleone/KTTestExpectation.git"
+                    developerConnection = "https://github.com/danielepantaleone/KTTestExpectation.git"
+                    url = "https://github.com/danielepantaleone/KTTestExpectation"
+                }
             }
         }
     }
     repositories {
         maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/danielepantaleone/KTTestExpectation")
+            name = "MavenCentral"
+            url = uri("https://s01.oss.sonatype.org/content/repositories/releases/")
             credentials {
-                username = 'danielepantaleone'
-                password = System.getenv("GITHUB_TOKEN")
+                username = System.getenv("MAVEN_USER")
+                password = System.getenv("MAVEN_TOKEN")
             }
         }
     }
