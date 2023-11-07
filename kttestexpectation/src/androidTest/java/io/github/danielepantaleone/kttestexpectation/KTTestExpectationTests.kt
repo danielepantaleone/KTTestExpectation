@@ -191,19 +191,13 @@ class KTTestExpectationTests {
         expectation2.fulfill()
         runLater(200, expectation1::fulfill)
         runLater(300, expectation2::fulfill)
-        try {
-            waitForExpectations(
-                expectations = listOf(expectation1, expectation2),
-                time = 500,
-                unit = TimeUnit.MILLISECONDS
-            )
-            TestCase.fail("Expected KTTestException due 'Expectation 2' being already fulfilled")
-        } catch (e: KTTestException) {
-            TestCase.assertFalse(expectation1.isFulfilled)
-            TestCase.assertTrue(expectation2.isFulfilled)
-            val message = checkNotNull(e.message)
-            TestCase.assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
-        }
+        waitForExpectations(
+            expectations = listOf(expectation1, expectation2),
+            time = 500,
+            unit = TimeUnit.MILLISECONDS
+        )
+        TestCase.assertTrue(expectation1.isFulfilled)
+        TestCase.assertTrue(expectation2.isFulfilled)
     }
 
     @Test

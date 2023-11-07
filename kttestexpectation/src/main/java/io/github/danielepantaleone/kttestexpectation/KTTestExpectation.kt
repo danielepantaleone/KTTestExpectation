@@ -135,8 +135,6 @@ fun waitForExpectation(expectation: KTTestExpectation, time: Long, unit: TimeUni
 fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit: TimeUnit) {
     if (expectations.isEmpty())
         throw KTTestException(message = "No expectation provided")
-    if (expectations.any { it.isFulfilled })
-        throw KTTestException(message = "Expectation(s) already fulfilled: ${expectations.filter { it.isFulfilled }}")
     val mutex: Lock = ReentrantLock()
     val condition: Condition = mutex.newCondition()
     fun allExpectationsFulfilled(): Boolean = expectations.all { it.isFulfilled }
