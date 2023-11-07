@@ -8,6 +8,16 @@ import kotlin.concurrent.withLock
 import kotlin.jvm.Throws
 
 /**
+ * Reentrant lock for asynchronous await of expectation fulfillment and mutual exclusion.
+ */
+private val mutex: Lock = ReentrantLock()
+
+/**
+ * Condition variable to await for expectations fulfillment.
+ */
+private val condition: Condition = mutex.newCondition()
+
+/**
  * Exception raised when awaiting for expectations.
  *
  * @param message The exception message
@@ -23,11 +33,6 @@ class KTTestException(message: String): RuntimeException(message)
 class KTTestExpectation internal constructor(private val description: String) {
 
     // region Private properties
-
-    /**
-     * Reentrant lock for asynchronous await of expectation fulfillment.
-     */
-    private val mutex: Lock = ReentrantLock()
 
     /**
      * Amount of times this expectation was fulfilled.
@@ -135,10 +140,10 @@ fun waitForExpectation(expectation: KTTestExpectation, time: Long, unit: TimeUni
 fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit: TimeUnit) {
     if (expectations.isEmpty())
         throw KTTestException(message = "No expectation provided")
-    val mutex: Lock = ReentrantLock()
-    val condition: Condition = mutex.newCondition()
     fun allExpectationsFulfilled(): Boolean = expectations.all { it.isFulfilled }
     mutex.withLock {
+        if (allExpectationsFulfilled())
+            return
         expectations.forEach {
             it.fulfillmentListener = {
                 mutex.withLock {
