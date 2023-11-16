@@ -3,6 +3,9 @@ package io.github.danielepantaleone.kttestexpectation
 import android.os.Handler
 import android.os.Looper
 import junit.framework.TestCase
+import junit.framework.TestCase.assertFalse
+import junit.framework.TestCase.assertTrue
+import junit.framework.TestCase.fail
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -41,7 +44,21 @@ class KTTestExpectationTests {
             time = 500,
             unit = TimeUnit.MILLISECONDS
         )
-        TestCase.assertTrue(expectation.isFulfilled)
+        assertTrue(expectation.isFulfilled)
+    }
+
+    @Test
+    fun testAwaitSingleExpectationWithOverFulfillmentAndAssertForOverFulfillToFalse() {
+        val expectation = expectation("Expectation")
+        expectation.assertForOverFulfill = false
+        expectation.fulfill()
+        runLater(200, expectation::fulfill)
+        waitForExpectation(
+            expectation = expectation,
+            time = 500,
+            unit = TimeUnit.MILLISECONDS
+        )
+        assertTrue(expectation.isFulfilled)
     }
 
     @Test
@@ -54,9 +71,9 @@ class KTTestExpectationTests {
                 time = 200,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to exceeding expectation timeout")
+            fail("Expected KTTestException due to exceeding expectation timeout")
         } catch (_: KTTestException) {
-            TestCase.assertFalse(expectation.isFulfilled)
+            assertFalse(expectation.isFulfilled)
         }
     }
 
@@ -69,9 +86,9 @@ class KTTestExpectationTests {
                 time = 500,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to exceeding expectation timeout")
+            fail("Expected KTTestException due to exceeding expectation timeout")
         } catch (_: KTTestException) {
-            TestCase.assertFalse(expectation.isFulfilled)
+            assertFalse(expectation.isFulfilled)
         }
     }
 
@@ -81,7 +98,7 @@ class KTTestExpectationTests {
         expectation.expectedFulfillmentCount = -1
         try {
             expectation.fulfill()
-            TestCase.fail("Expected KTTestException due to negative expectedFulfillmentCount")
+            fail("Expected KTTestException due to negative expectedFulfillmentCount")
         } catch (e: KTTestException) {
             TestCase.assertEquals("Expectation expected fulfillment count must be greater than 0", e.message)
         }
@@ -98,8 +115,8 @@ class KTTestExpectationTests {
             time = 500,
             unit = TimeUnit.MILLISECONDS
         )
-        TestCase.assertTrue(expectation1.isFulfilled)
-        TestCase.assertTrue(expectation2.isFulfilled)
+        assertTrue(expectation1.isFulfilled)
+        assertTrue(expectation2.isFulfilled)
     }
 
     @Test
@@ -115,8 +132,8 @@ class KTTestExpectationTests {
             time = 500,
             unit = TimeUnit.MILLISECONDS
         )
-        TestCase.assertTrue(expectation1.isFulfilled)
-        TestCase.assertTrue(expectation2.isFulfilled)
+        assertTrue(expectation1.isFulfilled)
+        assertTrue(expectation2.isFulfilled)
     }
 
     @Test
@@ -131,13 +148,13 @@ class KTTestExpectationTests {
                 time = 500,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
+            fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
         } catch (e: KTTestException) {
-            TestCase.assertTrue(expectation1.isFulfilled)
-            TestCase.assertFalse(expectation2.isFulfilled)
+            assertTrue(expectation1.isFulfilled)
+            assertFalse(expectation2.isFulfilled)
             val message = checkNotNull(e.message)
-            TestCase.assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
-            TestCase.assertFalse("Expect exception message not to contain 'Expectation 1'", message.contains("Expectation 1"))
+            assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
+            assertFalse("Expect exception message not to contain 'Expectation 1'", message.contains("Expectation 1"))
         }
     }
 
@@ -154,13 +171,13 @@ class KTTestExpectationTests {
                 time = 500,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
+            fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
         } catch (e: KTTestException) {
-            TestCase.assertTrue(expectation1.isFulfilled)
-            TestCase.assertFalse(expectation2.isFulfilled)
+            assertTrue(expectation1.isFulfilled)
+            assertFalse(expectation2.isFulfilled)
             val message = checkNotNull(e.message)
-            TestCase.assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
-            TestCase.assertFalse("Expect exception message not to contain 'Expectation 1'", message.contains("Expectation 1"))
+            assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
+            assertFalse("Expect exception message not to contain 'Expectation 1'", message.contains("Expectation 1"))
         }
     }
 
@@ -174,13 +191,13 @@ class KTTestExpectationTests {
                 time = 500,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 1' and 'Expectation 2'")
+            fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 1' and 'Expectation 2'")
         } catch (e: KTTestException) {
-            TestCase.assertFalse(expectation1.isFulfilled)
-            TestCase.assertFalse(expectation2.isFulfilled)
+            assertFalse(expectation1.isFulfilled)
+            assertFalse(expectation2.isFulfilled)
             val message = checkNotNull(e.message)
-            TestCase.assertTrue("Expect exception message to contain 'Expectation 1'", message.contains("Expectation 1"))
-            TestCase.assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
+            assertTrue("Expect exception message to contain 'Expectation 1'", message.contains("Expectation 1"))
+            assertTrue("Expect exception message to contain 'Expectation 2'", message.contains("Expectation 2"))
         }
     }
 
@@ -196,8 +213,8 @@ class KTTestExpectationTests {
             time = 500,
             unit = TimeUnit.MILLISECONDS
         )
-        TestCase.assertTrue(expectation1.isFulfilled)
-        TestCase.assertTrue(expectation2.isFulfilled)
+        assertTrue(expectation1.isFulfilled)
+        assertTrue(expectation2.isFulfilled)
     }
 
     @Test
@@ -208,7 +225,7 @@ class KTTestExpectationTests {
                 time = 500,
                 unit = TimeUnit.MILLISECONDS
             )
-            TestCase.fail("Expected KTTestException due to no expectation provided")
+            fail("Expected KTTestException due to no expectation provided")
         } catch (e: KTTestException) {
             TestCase.assertEquals("No expectation provided", e.message)
         }

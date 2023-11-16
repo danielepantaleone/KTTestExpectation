@@ -49,6 +49,12 @@ class KTTestExpectation internal constructor(private val description: String) {
     internal var fulfillmentListener: ((KTTestExpectation) -> Unit)? = null
 
     /**
+     * If set, calls to [fulfill] after the expectation has already been fulfilled, exceeding
+     * the fulfillment count - will raise a [KTTestException].
+     */
+    var assertForOverFulfill: Boolean = true
+
+    /**
      * The [expectedFulfillmentCount] is the number of times [fulfill] must be called on the expectation in order for it
      * to report complete fulfillment to its waiter. By default, expectations have an [expectedFulfillmentCount] of 1.
      * This value must be greater than 0.
@@ -72,7 +78,7 @@ class KTTestExpectation internal constructor(private val description: String) {
      * expectation more times than its [expectedFulfillmentCount] value specifies, or when the test case
      * that vended the expectation has already completed.
      *
-     * @throws KTTestException If the expectation expected fulfillment count is <= 0
+     * @throws KTTestException If the expectation expected fulfillment count is <= 0 and [assertForOverFulfill] is set to true
      * @throws KTTestException If the expectation was already fulfilled
      */
     @Throws(KTTestException::class)
@@ -82,7 +88,7 @@ class KTTestExpectation internal constructor(private val description: String) {
         try {
             if (expectedFulfillmentCount <= 0)
                 throw KTTestException("Expectation expected fulfillment count must be greater than 0")
-            if (fulfillmentCount >= expectedFulfillmentCount)
+            if (assertForOverFulfill && fulfillmentCount >= expectedFulfillmentCount)
                 throw KTTestException("Expectation already fulfilled: $this")
             fulfillmentCount += 1
             isFulfilled = fulfillmentCount >= expectedFulfillmentCount
