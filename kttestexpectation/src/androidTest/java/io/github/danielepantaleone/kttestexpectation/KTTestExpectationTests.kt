@@ -3,6 +3,7 @@ package io.github.danielepantaleone.kttestexpectation
 import android.os.Handler
 import android.os.Looper
 import junit.framework.TestCase
+import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import junit.framework.TestCase.fail
@@ -52,13 +53,9 @@ class KTTestExpectationTests {
         val expectation = expectation("Expectation")
         expectation.assertForOverFulfill = false
         expectation.fulfill()
-        runLater(200, expectation::fulfill)
-        waitForExpectation(
-            expectation = expectation,
-            time = 500,
-            unit = TimeUnit.MILLISECONDS
-        )
+        expectation.fulfill()
         assertTrue(expectation.isFulfilled)
+        assertEquals(2, expectation.fulfillmentCount)
     }
 
     @Test

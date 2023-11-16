@@ -37,7 +37,7 @@ class KTTestExpectation internal constructor(private val description: String) {
     /**
      * Amount of times this expectation was fulfilled.
      */
-    private var fulfillmentCount: Int = 0
+    internal var fulfillmentCount: Int = 0
 
     // endregion
 
