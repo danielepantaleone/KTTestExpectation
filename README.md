@@ -29,7 +29,7 @@ Add the dependency to your `build.gradle` (Gradle Groovy):
 
 ```gradle
 dependencies {
-    androidTestImplementation 'io.github.danielepantaleone:kttestexpectation:1.0.2'
+    androidTestImplementation 'io.github.danielepantaleone:kttestexpectation:1.1.0'
 }
 ```
 
@@ -37,7 +37,7 @@ or `build.gradle.kts` (Kotlin DSL):
 
 ```gradle
 dependencies {
-    androidTestImplementation("io.github.danielepantaleone:kttestexpectation:1.0.2")
+    androidTestImplementation("io.github.danielepantaleone:kttestexpectation:1.1.0")
 }
 ```
 
@@ -99,6 +99,26 @@ fun testAwaitMultipleExpectations() {
         asyncLongestLongerOperationWithCallback {
             expectation2.fulfill()
         }   
+    }
+    waitForExpectations(
+        expectations = listOf(expectation1, expectation2),
+        time = 60,
+        unit = TimeUnit.SECONDS
+    )
+}
+```
+
+Awaiting on multiple expectations of different types:
+
+```kotlin
+@Test
+fun testAwaitMultipleExpectationsWithMixedTypes() {
+    val expectation1 = expectation("Expectation 1")
+    val expectation2 = expectation("Expectation 2") {  // no need to manually fulfill()
+        somePredicateThatWillEventuallyEvaluateToTrue()
+    }
+    asyncLongOperationWithCallback {
+        expectation1.fulfill()
     }
     waitForExpectations(
         expectations = listOf(expectation1, expectation2),
