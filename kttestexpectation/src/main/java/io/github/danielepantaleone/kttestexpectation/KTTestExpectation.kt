@@ -1,11 +1,14 @@
 package io.github.danielepantaleone.kttestexpectation
 
+import java.util.Timer
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.withLock
-import kotlin.jvm.Throws
+
+// region Global
 
 /**
  * Reentrant lock for asynchronous await of expectation fulfillment and mutual exclusion.
@@ -17,6 +20,10 @@ private val mutex: Lock = ReentrantLock()
  */
 private val condition: Condition = mutex.newCondition()
 
+// endregion
+
+// region Base expectation
+
 /**
  * Exception raised when awaiting for expectations.
  *
@@ -25,12 +32,36 @@ private val condition: Condition = mutex.newCondition()
 class KTTestException(message: String): RuntimeException(message)
 
 /**
- * An expected outcome in an asynchronous test.
- *
- * @property description A human readable string used to describe the expectation.
- * @constructor Creates a new [KTTestExpectation] with the provided description.
+ * Contract for test expectations.
  */
-class KTTestExpectation internal constructor(private val description: String) {
+interface KTTestExpectation {
+
+    /**
+     * A human readable string used to describe the expectation
+     */
+    val description: String
+
+    /**
+     * Whether this expectation has been fulfilled.
+     */
+    val isFulfilled: Boolean
+
+}
+
+// endregion
+
+// region Test regular expectation
+
+/**
+ * A regular expectation to assess the outcome of an asynchronous test.
+ * Expectation must be manually fulfilled using [fulfill].
+ *
+ * @property description A human readable string used to describe the expectation
+ * @constructor Creates a new [KTRegularExpectation] with the provided description
+ */
+class KTRegularExpectation internal constructor(
+    override val description: String
+): KTTestExpectation {
 
     // region Private properties
 
@@ -61,10 +92,11 @@ class KTTestExpectation internal constructor(private val description: String) {
      */
     var expectedFulfillmentCount: Int = 1
 
-    /**
-     * Whether this expectation has been fulfilled.
-     */
-    val isFulfilled: Boolean
+    // endregion
+
+    // region Overridden properties
+
+    override val isFulfilled: Boolean
         get() = mutex.withLock {
             return expectedFulfillmentCount in 1..fulfillmentCount
         }
@@ -109,14 +141,71 @@ class KTTestExpectation internal constructor(private val description: String) {
 }
 
 /**
- * Creates and returns a [KTTestExpectation].
+ * Creates and returns a [KTRegularExpectation] to assess the outcome of an asynchronous test.
+ * Expectation must be manually fulfilled using [KTRegularExpectation.fulfill].
  *
  * @param description The expectation description
- * @return [KTTestExpectation]
+ * @return [KTRegularExpectation]
  */
-fun expectation(description: String): KTTestExpectation {
-    return KTTestExpectation(description = description)
+fun expectation(description: String): KTRegularExpectation {
+    return KTRegularExpectation(description = description)
 }
+
+// endregion
+
+// region Test predicate expectation
+
+/**
+ * A predicate that fulfills an expectation by returning true.
+ */
+typealias KTTestPredicate = () -> Boolean
+
+/**
+ * A special type of expectation that repeatedly evaluates its predicate until it becomes true.
+ * Once the predicate has become true, it is expected to remain true and will not be evaluated again.
+ *
+ * Evaluation of the predicate is performed every 100ms on a separate thread.
+ *
+ * @property description A human readable string used to describe the expectation
+ * @property predicate A predicate that fulfill this expectation when it becomes true
+ * @constructor Creates a new [KTPredicateExpectation] with the provided description
+ */
+class KTPredicateExpectation internal constructor(
+    override val description: String,
+    private val predicate: KTTestPredicate
+) : KTTestExpectation {
+
+    // region Overridden properties
+
+    override val isFulfilled: Boolean
+        get() = mutex.withLock {
+            return predicate()
+        }
+
+    // endregion
+
+}
+
+/**
+ * Creates and returns a [KTPredicateExpectation].
+ *
+ * [KTPredicateExpectation] is a special type of expectation that repeatedly evaluates
+ * its predicate until it becomes true. Once the predicate has become true, it is expected
+ * to remain true and will not be evaluated again.
+ *
+ * Evaluation of the predicate is performed every 100ms on a separate thread.
+ *
+ * @param description The expectation description
+ * @property predicate A predicate that fulfill this expectation when it becomes true
+ * @return [KTPredicateExpectation]
+ */
+fun expectation(description: String, predicate: KTTestPredicate): KTPredicateExpectation {
+    return KTPredicateExpectation(description = description, predicate = predicate)
+}
+
+// endregion
+
+// region Expectation evaluation
 
 /**
  * Waits on an expectation for up to the specified timeout.
@@ -142,6 +231,7 @@ fun waitForExpectation(expectation: KTTestExpectation, time: Long, unit: TimeUni
  * @throws KTTestException If no expectation was provided
  * @throws KTTestException If any of the provided expectations cannot be fulfilled within the specified timeout
  */
+@Suppress("KotlinConstantConditions")
 @Throws(KTTestException::class)
 fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit: TimeUnit) {
     if (expectations.isEmpty())
@@ -150,7 +240,9 @@ fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit:
     mutex.withLock {
         if (allExpectationsFulfilled())
             return
-        expectations.forEach {
+        // Attach a listener to regular expectations since they will be manually fulfilled
+        val regularExpectations = expectations.filterIsInstance<KTRegularExpectation>()
+        regularExpectations.forEach {
             it.fulfillmentListener = {
                 mutex.withLock {
                     if (allExpectationsFulfilled()) {
@@ -159,12 +251,30 @@ fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit:
                 }
             }
         }
+        val predicateExpectations = expectations.filterIsInstance<KTPredicateExpectation>()
+        var predicateTimer: Timer? = null
+        if (predicateExpectations.isNotEmpty()) {
+            fun allPredicateExpectationsFulfilled(): Boolean = predicateExpectations.all { it.isFulfilled }
+            predicateTimer = fixedRateTimer(initialDelay = 100, period = 100) {
+                mutex.withLock {
+                    if (allPredicateExpectationsFulfilled()) {
+                        predicateTimer?.cancel()
+                    }
+                    if (allExpectationsFulfilled()) {
+                        condition.signalAll()
+                    }
+                }
+            }
+        }
         condition.await(time, unit)
-        expectations.forEach {
+        regularExpectations.forEach {
             it.fulfillmentListener = null
         }
+        predicateTimer?.cancel()
         if (!allExpectationsFulfilled()) {
             throw KTTestException(message = "Exceeded expectation(s) time: ${expectations.filter { !it.isFulfilled }}")
         }
     }
 }
+
+// endregion

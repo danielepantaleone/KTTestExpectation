@@ -2,7 +2,6 @@ package io.github.danielepantaleone.kttestexpectation
 
 import android.os.Handler
 import android.os.Looper
-import junit.framework.TestCase
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
@@ -11,6 +10,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 class KTTestExpectationTests {
 
@@ -39,7 +40,7 @@ class KTTestExpectationTests {
     @Test
     fun testAwaitSingleExpectationWithFulfillment() {
         val expectation = expectation("Expectation")
-        runLater(200, expectation::fulfill)
+        runAfterDelay(200, expectation::fulfill)
         waitForExpectation(
             expectation = expectation,
             time = 500,
@@ -61,7 +62,7 @@ class KTTestExpectationTests {
     @Test
     fun testAwaitSingleExpectationWithFulfillmentAfterTimeout() {
         val expectation = expectation("Expectation with fulfillment after timeout")
-        runLater(500, expectation::fulfill)
+        runAfterDelay(500, expectation::fulfill)
         try {
             waitForExpectation(
                 expectation = expectation,
@@ -97,7 +98,7 @@ class KTTestExpectationTests {
             expectation.fulfill()
             fail("Expected KTTestException due to negative expectedFulfillmentCount")
         } catch (e: KTTestException) {
-            TestCase.assertEquals("Expectation expected fulfillment count must be greater than 0", e.message)
+            assertEquals("Expectation expected fulfillment count must be greater than 0", e.message)
         }
     }
 
@@ -105,8 +106,8 @@ class KTTestExpectationTests {
     fun testAwaitMultiExpectationsWithFulfillment() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
-        runLater(200, expectation1::fulfill)
-        runLater(300, expectation2::fulfill)
+        runAfterDelay(200, expectation1::fulfill)
+        runAfterDelay(300, expectation2::fulfill)
         waitForExpectations(
             expectations = listOf(expectation1, expectation2),
             time = 500,
@@ -121,9 +122,9 @@ class KTTestExpectationTests {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.expectedFulfillmentCount = 2
-        runLater(200, expectation1::fulfill)
-        runLater(100, expectation2::fulfill)
-        runLater(300, expectation2::fulfill)
+        runAfterDelay(200, expectation1::fulfill)
+        runAfterDelay(100, expectation2::fulfill)
+        runAfterDelay(300, expectation2::fulfill)
         waitForExpectations(
             expectations = listOf(expectation1, expectation2),
             time = 500,
@@ -137,8 +138,8 @@ class KTTestExpectationTests {
     fun testAwaitMultiExpectationsWithSingleFulfillmentAfterTimeout() {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
-        runLater(200, expectation1::fulfill)
-        runLater(700, expectation2::fulfill)
+        runAfterDelay(200, expectation1::fulfill)
+        runAfterDelay(700, expectation2::fulfill)
         try {
             waitForExpectations(
                 expectations = listOf(expectation1, expectation2),
@@ -160,8 +161,8 @@ class KTTestExpectationTests {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.expectedFulfillmentCount = 2
-        runLater(200, expectation1::fulfill)
-        runLater(100, expectation2::fulfill)
+        runAfterDelay(200, expectation1::fulfill)
+        runAfterDelay(100, expectation2::fulfill)
         try {
             waitForExpectations(
                 expectations = listOf(expectation1, expectation2),
@@ -203,8 +204,8 @@ class KTTestExpectationTests {
         val expectation1 = expectation("Expectation 1")
         val expectation2 = expectation("Expectation 2")
         expectation2.fulfill()
-        runLater(200, expectation1::fulfill)
-        runLater(300, expectation2::fulfill)
+        runAfterDelay(200, expectation1::fulfill)
+        runAfterDelay(300, expectation2::fulfill)
         waitForExpectations(
             expectations = listOf(expectation1, expectation2),
             time = 500,
@@ -224,7 +225,118 @@ class KTTestExpectationTests {
             )
             fail("Expected KTTestException due to no expectation provided")
         } catch (e: KTTestException) {
-            TestCase.assertEquals("No expectation provided", e.message)
+            assertEquals("No expectation provided", e.message)
+        }
+    }
+
+    @Test
+    fun testAwaitSinglePredicateExpectation() {
+        val mutex = ReentrantLock()
+        var willBeSetToTrue = false
+        val expectation = expectation("Expectation") { mutex.withLock { willBeSetToTrue } }
+        runAfterDelay(200) {
+            mutex.withLock {
+                willBeSetToTrue = true
+            }
+        }
+        waitForExpectation(
+            expectation = expectation,
+            time = 500,
+            unit = TimeUnit.MILLISECONDS
+        )
+        assertTrue(expectation.isFulfilled)
+    }
+
+    @Test
+    fun testAwaitMultiplePredicateExpectations() {
+        val mutex = ReentrantLock()
+        var willBeSetToTrueOne = false
+        var willBeSetToTrueTwo = false
+        val expectation1 = expectation("Expectation 1") { mutex.withLock { willBeSetToTrueOne } }
+        val expectation2 = expectation("Expectation 2") { mutex.withLock { willBeSetToTrueTwo } }
+        runAfterDelay(200) { mutex.withLock { willBeSetToTrueOne = true } }
+        runAfterDelay(300) { mutex.withLock { willBeSetToTrueTwo = true } }
+        waitForExpectations(
+            expectations = listOf(expectation1, expectation2),
+            time = 500,
+            unit = TimeUnit.MILLISECONDS
+        )
+        assertTrue(expectation1.isFulfilled)
+        assertTrue(expectation2.isFulfilled)
+    }
+
+    @Test
+    fun testAwaitMultipleMixedTypeExpectations() {
+        val mutex = ReentrantLock()
+        var willBeSetToTrueOne = false
+        var willBeSetToTrueTwo = false
+        val expectation1 = expectation("Expectation 1") { mutex.withLock { willBeSetToTrueOne } }
+        val expectation2 = expectation("Expectation 2") { mutex.withLock { willBeSetToTrueTwo } }
+        val expectation3 = expectation("Expectation 3")
+        expectation3.expectedFulfillmentCount = 2
+        runAfterDelay(200) { mutex.withLock { willBeSetToTrueOne = true } }
+        runAfterDelay(300) { expectation3.fulfill() }
+        runAfterDelay(500) { mutex.withLock { willBeSetToTrueTwo = true } }
+        runAfterDelay(700) { expectation3.fulfill() }
+        waitForExpectations(
+            expectations = listOf(expectation1, expectation2, expectation3),
+            time = 1000,
+            unit = TimeUnit.MILLISECONDS
+        )
+        assertTrue(expectation1.isFulfilled)
+        assertTrue(expectation2.isFulfilled)
+        assertTrue(expectation3.isFulfilled)
+    }
+
+    @Test
+    fun testAwaitMultipleMixedTypeExpectationsWithFailureOnPredicate() {
+        val mutex = ReentrantLock()
+        var willBeSetToTrueOne = false
+        val willBeSetToTrueTwo = false
+        val expectation1 = expectation("Expectation 1") { mutex.withLock { willBeSetToTrueOne } }
+        val expectation2 = expectation("Expectation 2") { mutex.withLock { willBeSetToTrueTwo } }
+        val expectation3 = expectation("Expectation 3")
+        expectation3.expectedFulfillmentCount = 2
+        runAfterDelay(200) { mutex.withLock { willBeSetToTrueOne = true } }
+        runAfterDelay(300) { expectation3.fulfill() }
+        runAfterDelay(700) { expectation3.fulfill() }
+        try {
+            waitForExpectations(
+                expectations = listOf(expectation1, expectation2, expectation3),
+                time = 1000,
+                unit = TimeUnit.MILLISECONDS
+            )
+            fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
+        } catch (_: KTTestException) {
+            assertTrue(expectation1.isFulfilled)
+            assertFalse(expectation2.isFulfilled)
+            assertTrue(expectation3.isFulfilled)
+        }
+    }
+
+    @Test
+    fun testAwaitMultipleMixedTypeExpectationsWithFailureOnRegular() {
+        val mutex = ReentrantLock()
+        var willBeSetToTrueOne = false
+        var willBeSetToTrueTwo = false
+        val expectation1 = expectation("Expectation 1") { mutex.withLock { willBeSetToTrueOne } }
+        val expectation2 = expectation("Expectation 2") { mutex.withLock { willBeSetToTrueTwo } }
+        val expectation3 = expectation("Expectation 3")
+        expectation3.expectedFulfillmentCount = 2
+        runAfterDelay(200) { mutex.withLock { willBeSetToTrueOne = true } }
+        runAfterDelay(300) { expectation3.fulfill() }
+        runAfterDelay(500) { mutex.withLock { willBeSetToTrueTwo = true } }
+        try {
+            waitForExpectations(
+                expectations = listOf(expectation1, expectation2, expectation3),
+                time = 1000,
+                unit = TimeUnit.MILLISECONDS
+            )
+            fail("Expected KTTestException due to exceeding expectation timeout of 'Expectation 2'")
+        } catch (_: KTTestException) {
+            assertTrue(expectation1.isFulfilled)
+            assertTrue(expectation2.isFulfilled)
+            assertFalse(expectation3.isFulfilled)
         }
     }
 
@@ -232,7 +344,7 @@ class KTTestExpectationTests {
 
     // region Internals
 
-    private fun runLater(delayMillis: Long, callback: Runnable) {
+    private fun runAfterDelay(delayMillis: Long, callback: Runnable) {
         callbacks.add(callback)
         handler?.postDelayed(callback, delayMillis)
     }
