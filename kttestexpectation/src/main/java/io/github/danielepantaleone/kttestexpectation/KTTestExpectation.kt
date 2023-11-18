@@ -222,7 +222,22 @@ fun waitForExpectation(expectation: KTTestExpectation, time: Long, unit: TimeUni
 }
 
 /**
- * Waits on a group of expectations for up to the specified timeout
+ * Waits on a group of expectations for up to the specified timeout.
+ *
+ * @param expectations An array of expectations that must be fulfilled
+ * @param time The maximum time to wait for expectations to be fulfilled
+ * @param unit The time unit of the time argument
+ * @throws KTTestException If any of the expectations was already fulfilled
+ * @throws KTTestException If no expectation was provided
+ * @throws KTTestException If any of the provided expectations cannot be fulfilled within the specified timeout
+ */
+@Throws(KTTestException::class)
+fun waitForExpectations(vararg expectations: KTTestExpectation, time: Long, unit: TimeUnit) {
+    waitForExpectations(expectations = expectations.toList(), time = time, unit = unit)
+}
+
+/**
+ * Waits on a group of expectations for up to the specified timeout.
  *
  * @param expectations An array of expectations that must be fulfilled
  * @param time The maximum time to wait for expectations to be fulfilled
