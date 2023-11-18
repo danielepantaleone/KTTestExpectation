@@ -184,6 +184,10 @@ class KTPredicateExpectation internal constructor(
 
     // endregion
 
+    override fun toString(): String {
+        return description
+    }
+
 }
 
 /**
