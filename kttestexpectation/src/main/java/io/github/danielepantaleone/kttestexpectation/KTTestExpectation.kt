@@ -250,16 +250,31 @@ fun waitForExpectations(vararg expectations: KTTestExpectation, time: Long, unit
  * @throws KTTestException If no expectation was provided
  * @throws KTTestException If any of the provided expectations cannot be fulfilled within the specified timeout
  */
-@Suppress("KotlinConstantConditions")
 @Throws(KTTestException::class)
 fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit: TimeUnit) {
-    if (expectations.isEmpty())
+
+    if (expectations.isEmpty()) {
         throw KTTestException(message = "No expectation provided")
+    }
+
+    /**
+     * Returns true if all expectations in the provided list are fulfilled, false otherwise.
+     *
+     * @return [Boolean]
+     */
     fun allExpectationsFulfilled(): Boolean = expectations.all { it.isFulfilled }
-    mutex.withLock {
-        if (allExpectationsFulfilled())
-            return
-        // Attach a listener to regular expectations since they will be manually fulfilled
+
+    // region Regular expectations
+
+    /**
+     * Setup regular expectations from the list of provided ones.
+     *
+     * This function attach a fulfillment listener to all the regular expectations in
+     * the provided list, so that we can have a feedback upon fulfillment. If all at a
+     * certain point in the future all the expectations are fulfilled, the condition is
+     * signaled and current thread is unlocked.
+     */
+    fun setupRegularExpectations() {
         val regularExpectations = expectations.filterIsInstance<KTRegularExpectation>()
         regularExpectations.forEach {
             it.fulfillmentListener = {
@@ -270,8 +285,36 @@ fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit:
                 }
             }
         }
+    }
+
+    /**
+     * Tear down regular expectations by detaching the listener.
+     */
+    fun tearDownRegularExpectations() {
+        val regularExpectations = expectations.filterIsInstance<KTRegularExpectation>()
+        regularExpectations.forEach {
+            it.fulfillmentListener = null
+        }
+    }
+
+    // endregion
+
+    // region Predicate expectations
+
+    var predicateTimer: Timer? = null
+
+    /**
+     * Setup predicate expectations from the list of provided ones.
+     *
+     * This function setup a timer that runs every 100ms to check whether all the
+     * predicate expectations in the provided list gets fulfilled. Once all of them gets
+     * fulfilled the time stops running, meaning that if the fulfillment predicate will
+     * change to false after all the predicate expectations are evaluated, this
+     * function will not notice it. If all at a certain point in the future all the
+     * expectations are fulfilled, the condition is signaled and current thread is unlocked.
+     */
+    fun setupPredicateExpectations() {
         val predicateExpectations = expectations.filterIsInstance<KTPredicateExpectation>()
-        var predicateTimer: Timer? = null
         if (predicateExpectations.isNotEmpty()) {
             fun allPredicateExpectationsFulfilled(): Boolean = predicateExpectations.all { it.isFulfilled }
             predicateTimer = fixedRateTimer(initialDelay = 100, period = 100) {
@@ -285,15 +328,30 @@ fun waitForExpectations(expectations: List<KTTestExpectation>, time: Long, unit:
                 }
             }
         }
-        condition.await(time, unit)
-        regularExpectations.forEach {
-            it.fulfillmentListener = null
-        }
+    }
+
+    /**
+     * Tear down predicate expectations by canceling the predicate timer.
+     */
+    fun tearDownPredicateExpectations() {
         predicateTimer?.cancel()
+    }
+
+    // endregion
+
+    mutex.withLock {
+        if (allExpectationsFulfilled())
+            return
+        setupRegularExpectations()
+        setupPredicateExpectations()
+        condition.await(time, unit)
+        tearDownRegularExpectations()
+        tearDownPredicateExpectations()
         if (!allExpectationsFulfilled()) {
             throw KTTestException(message = "Exceeded expectation(s) time: ${expectations.filter { !it.isFulfilled }}")
         }
     }
+
 }
 
 // endregion
