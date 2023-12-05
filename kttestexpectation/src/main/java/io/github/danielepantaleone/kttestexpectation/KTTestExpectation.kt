@@ -63,21 +63,21 @@ class KTRegularExpectation internal constructor(
     override val description: String
 ): KTTestExpectation {
 
-    // region Private properties
+    // region Internal properties
 
     /**
      * Amount of times this expectation was fulfilled.
      */
     internal var fulfillmentCount: Int = 0
 
-    // endregion
-
-    // region Properties
-
     /**
      * A callback to be invoked when an expectation is fulfilled.
      */
     internal var fulfillmentListener: ((KTTestExpectation) -> Unit)? = null
+
+    // endregion
+
+    // region Properties
 
     /**
      * If set, calls to [fulfill] after the expectation has already been fulfilled, exceeding
